@@ -1,0 +1,47 @@
+---
+version: 3
+
+build_arg_defaults:
+  ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: '--pre'
+
+dependencies:
+  ansible_core:
+    package_pip: ansible-core>=2.15.1,<2.16
+  ansible_runner:
+    package_pip: ansible-runner
+  galaxy: requirements.yml
+  python: requirements.txt
+  system: bindep.txt
+
+images:
+  base_image:
+    name: quay.io/centos/centos:stream9
+
+# Custom package manager path for the RHEL based images
+# options:
+#  package_manager_path: /usr/bin/microdnf
+
+# additional_build_files:
+#     - src: files/ansible.cfg
+#       dest: configs
+
+additional_build_steps:
+  prepend_base:
+    - RUN echo This is a prepend base command!
+    # Enable Non-default stream before packages provided by it can be installed. (optional)
+    # - RUN $PKGMGR module enable postgresql:15 -y
+    # - RUN $PKGMGR install -y postgresql
+  # prepend_galaxy:
+  #   - COPY _build/configs/ansible.cfg /etc/ansible/ansible.cfg
+  append_base:
+    - RUN $PYCMD -m pip install -U pip
+  prepend_final: |
+    RUN $PKGMGR install -y dnf-plugins-core
+    RUN $PKGMGR config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+    RUN $PKGMGR install -y packer
+    RUN whoami
+    RUN cat /etc/os-release
+  append_final:
+    - COPY --from=quay.io/ansible/receptor:devel /usr/bin/receptor /usr/bin/receptor
+    - RUN echo This is a post-install command!
+    - RUN ls -la /etc
