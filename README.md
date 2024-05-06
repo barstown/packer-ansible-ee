@@ -41,3 +41,10 @@ $ podman image tag ghcr.io/barstown/packer-ansible-ee:latest ghcr.io/barstown/pa
 ```bash
 $ podman push ghcr.io/barstown/packer-ansible-ee:latest
 ```
+
+## Other repo dependencies
+
+This repo also makes use of the various extensions, as documented in the
+[extensions.json](.vscode/extensions.json) file. These are optional, but
+recommended in most cases. Some extension configuration files exist in this
+repository that are not strictly necessary for ansible-builder functionality.

@@ -1,0 +1,7 @@
+[Aa]nsible
+Active Directory
+Kerberos
+Jinja
+Todo Tree
+(?i)Todo
+(?i)EditorConfig

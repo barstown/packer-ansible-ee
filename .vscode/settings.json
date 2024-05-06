@@ -1,0 +1,16 @@
+{
+    "files.trimFinalNewlines": true,
+    "ansible.python.interpreterPath": "/usr/bin/python3",
+    "todo-tree.general.tags": [
+      "BUG",
+      "FIXME",
+      "HACK",
+      "TODO",
+    ],
+    "todo-tree.filtering.excludeGlobs": [
+      "**/doc/*/**",
+      "**/collections/ansible_collections/*/**",
+      "**/*.md"
+    ],
+    "vale.valeCLI.config": "${workspaceFolder}/.vale.ini"
+}
