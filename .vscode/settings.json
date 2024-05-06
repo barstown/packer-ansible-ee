@@ -12,5 +12,6 @@
       "**/collections/ansible_collections/*/**",
       "**/*.md"
     ],
-    "vale.valeCLI.config": "${workspaceFolder}/.vale.ini"
+    "vale.valeCLI.config": "${workspaceFolder}/.vale.ini",
+    "vale.enableSpellcheck": true
 }

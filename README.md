@@ -1,6 +1,6 @@
-# Packer AWX EE
+# Packer AWX execution environment
 
-My Execution Environment for building Packer templates in AWX.
+An Ansible execution environment for building Packer templates using AWX.
 
 ## Local setup requirements
 
@@ -12,10 +12,9 @@ $ sudo dnf install python3-pip pipx
 
 Then, [install ansible-builder](https://ansible-builder.readthedocs.io/en/stable/installation/).
 
-Although the official documentation suggests installing with `pip`, I prefer to
-use `pipx` so that each package gets it's own isolated environment.
+Although the official documentation suggests installing with `pip`, using `pipx` ensures each package gets it's own virtual environment.
 
-If ansible-builder is installed using pipx, you may need to also inject setuptools into the venv.
+If installing ansible-builder using pipx, you may need to also inject setuptools into the virtual environment.
 
 ```bash
 $ pipx install ansible-builder
@@ -24,7 +23,7 @@ $ pipx inject ansible-builder setuptools
 
 ## Build the image locally
 
-Then run the following command from the root of this repo:
+Run the following command from the root of this repository to start the build:
 
 ```bash
 $ ansible-builder build -v3 -t ghcr.io/barstown/packer-ansible-ee # --container-runtime=docker # Is podman by default
@@ -42,9 +41,9 @@ $ podman image tag ghcr.io/barstown/packer-ansible-ee:latest ghcr.io/barstown/pa
 $ podman push ghcr.io/barstown/packer-ansible-ee:latest
 ```
 
-## Other repo dependencies
+## Other repository dependencies
 
-This repo also makes use of the various extensions, as documented in the
+This repository also makes use of various extensions, as documented in the
 [extensions.json](.vscode/extensions.json) file. These are optional, but
-recommended in most cases. Some extension configuration files exist in this
-repository that are not strictly necessary for ansible-builder functionality.
+recommended usually. Some extension configuration files exist in this
+repository that aren't necessary for ansible-builder functionality.

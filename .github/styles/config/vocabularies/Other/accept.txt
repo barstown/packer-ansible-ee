@@ -1,3 +1,4 @@
 BUG
 FIXME
 HACK
+setuptools
