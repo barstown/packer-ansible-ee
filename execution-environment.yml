@@ -36,9 +36,11 @@ additional_build_steps:
   append_base:
     - RUN $PYCMD -m pip install -U pip
   prepend_final: |
-    RUN $PKGMGR install -y dnf-plugins-core
+    RUN $PKGMGR install -y dnf-plugins-core epel-release epel-next-release
     RUN $PKGMGR config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-    RUN $PKGMGR install -y packer
+    RUN $PKGMGR upgrade -y --refresh
+    RUN $PKGMGR install -y packer opentofu
+    RUN $PKGMGR clean all
     RUN whoami
     RUN cat /etc/os-release
   append_final:
