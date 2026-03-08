@@ -61,11 +61,19 @@ execution environment:
 It pushes these tags to `ghcr.io/<owner>/<repo>`:
 
 - `latest`
-- `<YYYYMMDD>`
-- `<YYYYMMDD>-packer-<PACKER_VERSION>`
+- `<YY.MM>` (monthly channel tag)
+- `<YY.MM.DD>-<PACKER_VERSION>`
 
 The workflow detects the Packer version by running `packer version` in the built
-image, then records it in the Actions run summary.
+image.
+
+Published images also include OCI metadata labels:
+
+- `org.opencontainers.image.source`
+- `org.opencontainers.image.revision`
+- `org.opencontainers.image.created`
+- `org.opencontainers.image.version`
+- `org.opencontainers.image.description`
 
 ## Other repository dependencies
 
