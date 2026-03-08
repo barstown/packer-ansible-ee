@@ -60,7 +60,7 @@ jobs:
             --change "LABEL org.opencontainers.image.revision=${{ github.sha }}" \
             --change "LABEL org.opencontainers.image.created=$created" \
             --change "LABEL org.opencontainers.image.version=${{ steps.calver.outputs.day }}-${{ steps.packer.outputs.version }}" \
-            --change "LABEL org.opencontainers.image.description=Packer AWX execution environment" \
+            --change "LABEL org.opencontainers.image.description=\"Packer AWX execution environment\"" \
             "$container_id" "$REGISTRY/$IMAGE_NAME:latest" >/dev/null
           docker rm "$container_id" >/dev/null
 
