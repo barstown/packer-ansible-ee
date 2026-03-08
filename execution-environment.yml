@@ -6,10 +6,10 @@ build_arg_defaults:
 
 dependencies:
   python_interpreter:
-    package_system: python3.11
-    python_path: /usr/bin/python3.11
+    package_system: python3.12
+    python_path: /usr/bin/python3.12
   ansible_core:
-    package_pip: ansible-core>=2.15.1,<2.17
+    package_pip: ansible-core>=2.15.1,<2.21
   ansible_runner:
     package_pip: ansible-runner
   galaxy: requirements.yml
@@ -18,7 +18,7 @@ dependencies:
 
 images:
   base_image:
-    name: quay.io/centos/centos:stream9
+    name: quay.io/centos/centos:stream10
 
 # Custom package manager path for the RHEL based images
 # options:
@@ -39,7 +39,7 @@ additional_build_steps:
   append_base:
     - RUN $PYCMD -m pip install -U pip
   prepend_final: |
-    RUN $PKGMGR install -y dnf-plugins-core epel-release epel-next-release
+    RUN $PKGMGR install -y dnf-plugins-core epel-release
     RUN $PKGMGR config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
     RUN $PKGMGR upgrade -y --refresh
     RUN $PKGMGR install -y packer opentofu
