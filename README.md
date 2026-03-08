@@ -2,23 +2,32 @@
 
 An Ansible execution environment for building Packer templates using AWX.
 
-## Local setup requirements
+## Tooling (mise + uv)
 
-Install `pip` (and optionally `pipx`) using your package manager.
+This project uses mise to pin Python and uv, and uv to manage Python CLI
+packages inside a project-local venv.
+
+First-time setup:
 
 ```bash
-$ sudo dnf install python3-pip pipx
+mise trust
+mise install
+uv init --bare
 ```
 
-Then, [install ansible-builder](https://ansible-builder.readthedocs.io/en/stable/installation/).
+When you `cd` into the repo, mise will auto-activate the uv venv.
 
-Although the official documentation suggests installing with `pip`, using `pipx` ensures each package gets it's own virtual environment.
-
-If installing ansible-builder using pipx, you may need to also inject setuptools into the virtual environment.
+Add or update Python tools and packages:
 
 ```bash
-$ pipx install ansible-builder
-$ pipx inject ansible-builder setuptools
+uv add ansible-builder==3.1.1 ansible-core==2.20.3 ansible-lint==26.3.0 setuptools>=82.0.0,<83.0.0
+uv sync
+```
+
+Update tool versions pinned by mise:
+
+```bash
+mise install
 ```
 
 ## Build the image locally
@@ -41,9 +50,27 @@ $ podman image tag ghcr.io/barstown/packer-ansible-ee:latest ghcr.io/barstown/pa
 $ podman push ghcr.io/barstown/packer-ansible-ee:latest
 ```
 
+## GitHub Actions image publishing
+
+The workflow at `.github/workflows/build-ee-image.yml` builds and publishes this
+execution environment:
+
+- on demand via `workflow_dispatch`
+- monthly on the 1st day of the month (05:00 UTC)
+
+It pushes these tags to `ghcr.io/<owner>/<repo>`:
+
+- `latest`
+- `<YYYYMMDD>`
+- `packer-<PACKER_VERSION>`
+- `<YYYYMMDD>-packer-<PACKER_VERSION>`
+
+The workflow detects the Packer version by running `packer version` in the built
+image, then records it in the Actions run summary.
+
 ## Other repository dependencies
 
 This repository also makes use of various extensions, as documented in the
 [extensions.json](.vscode/extensions.json) file. These are optional, but
-recommended usually. Some extension configuration files exist in this
-repository that aren't necessary for ansible-builder functionality.
+recommended usually. Some extension configuration files exist in this repository
+that aren't necessary for ansible-builder functionality.
