@@ -35,10 +35,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create date tag
-        id: date
+      - name: Create CalVer tags
+        id: calver
         run: |
-          echo "tag=$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+          echo "month=$(date -u +%y.%m)" >> "$GITHUB_OUTPUT"
+          echo "day=$(date -u +%y.%m.%d)" >> "$GITHUB_OUTPUT"
 
       - name: Build image with latest tag
         run: |
@@ -50,13 +51,26 @@ jobs:
           version="$(docker run --rm "$REGISTRY/$IMAGE_NAME:latest" packer version | awk 'NR==1 {sub(/^v/, "", $2); print $2}')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Add date and version tags
+      - name: Add OCI labels
         run: |
-          docker tag "$REGISTRY/$IMAGE_NAME:latest" "$REGISTRY/$IMAGE_NAME:${{ steps.date.outputs.tag }}"
-          docker tag "$REGISTRY/$IMAGE_NAME:latest" "$REGISTRY/$IMAGE_NAME:${{ steps.date.outputs.tag }}-packer-${{ steps.packer.outputs.version }}"
+          created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          container_id="$(docker create "$REGISTRY/$IMAGE_NAME:latest")"
+          docker commit \
+            --change "LABEL org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            --change "LABEL org.opencontainers.image.revision=${{ github.sha }}" \
+            --change "LABEL org.opencontainers.image.created=$created" \
+            --change "LABEL org.opencontainers.image.version=${{ steps.calver.outputs.day }}-${{ steps.packer.outputs.version }}" \
+            --change "LABEL org.opencontainers.image.description=Packer AWX execution environment" \
+            "$container_id" "$REGISTRY/$IMAGE_NAME:latest" >/dev/null
+          docker rm "$container_id" >/dev/null
+
+      - name: Add CalVer and version tags
+        run: |
+          docker tag "$REGISTRY/$IMAGE_NAME:latest" "$REGISTRY/$IMAGE_NAME:${{ steps.calver.outputs.month }}"
+          docker tag "$REGISTRY/$IMAGE_NAME:latest" "$REGISTRY/$IMAGE_NAME:${{ steps.calver.outputs.day }}-${{ steps.packer.outputs.version }}"
 
       - name: Push tags to GHCR
         run: |
           docker push "$REGISTRY/$IMAGE_NAME:latest"
-          docker push "$REGISTRY/$IMAGE_NAME:${{ steps.date.outputs.tag }}"
-          docker push "$REGISTRY/$IMAGE_NAME:${{ steps.date.outputs.tag }}-packer-${{ steps.packer.outputs.version }}"
+          docker push "$REGISTRY/$IMAGE_NAME:${{ steps.calver.outputs.month }}"
+          docker push "$REGISTRY/$IMAGE_NAME:${{ steps.calver.outputs.day }}-${{ steps.packer.outputs.version }}"
