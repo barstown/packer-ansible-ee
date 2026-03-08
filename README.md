@@ -62,7 +62,6 @@ It pushes these tags to `ghcr.io/<owner>/<repo>`:
 
 - `latest`
 - `<YYYYMMDD>`
-- `packer-<PACKER_VERSION>`
 - `<YYYYMMDD>-packer-<PACKER_VERSION>`
 
 The workflow detects the Packer version by running `packer version` in the built

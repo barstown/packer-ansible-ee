@@ -13,7 +13,8 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: ghcr.io/${{ github.repository }}
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
 
     steps:
       - name: Checkout
@@ -30,7 +31,7 @@ jobs:
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -41,12 +42,12 @@ jobs:
 
       - name: Build image with latest tag
         run: |
-          ansible-builder build -v3 --container-runtime docker -t "$IMAGE_NAME:latest"
+          ansible-builder build -v3 --container-runtime docker -t "$REGISTRY/$IMAGE_NAME:latest"
 
       - name: Detect Packer version from image
         id: packer
         run: |
-          version="$(docker run --rm "$IMAGE_NAME:latest" packer version | awk 'NR==1 {sub(/^v/, "", $2); print $2}')"
+          version="$(docker run --rm "$REGISTRY/$IMAGE_NAME:latest" packer version | awk 'NR==1 {sub(/^v/, "", $2); print $2}')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           {
             echo "## Image build metadata"
@@ -56,13 +57,11 @@ jobs:
 
       - name: Add date and version tags
         run: |
-          docker tag "$IMAGE_NAME:latest" "$IMAGE_NAME:${{ steps.date.outputs.tag }}"
-          docker tag "$IMAGE_NAME:latest" "$IMAGE_NAME:packer-${{ steps.packer.outputs.version }}"
-          docker tag "$IMAGE_NAME:latest" "$IMAGE_NAME:${{ steps.date.outputs.tag }}-packer-${{ steps.packer.outputs.version }}"
+          docker tag "$REGISTRY/$IMAGE_NAME:latest" "$REGISTRY/$IMAGE_NAME:${{ steps.date.outputs.tag }}"
+          docker tag "$REGISTRY/$IMAGE_NAME:latest" "$REGISTRY/$IMAGE_NAME:${{ steps.date.outputs.tag }}-packer-${{ steps.packer.outputs.version }}"
 
       - name: Push tags to GHCR
         run: |
-          docker push "$IMAGE_NAME:latest"
-          docker push "$IMAGE_NAME:${{ steps.date.outputs.tag }}"
-          docker push "$IMAGE_NAME:packer-${{ steps.packer.outputs.version }}"
-          docker push "$IMAGE_NAME:${{ steps.date.outputs.tag }}-packer-${{ steps.packer.outputs.version }}"
+          docker push "$REGISTRY/$IMAGE_NAME:latest"
+          docker push "$REGISTRY/$IMAGE_NAME:${{ steps.date.outputs.tag }}"
+          docker push "$REGISTRY/$IMAGE_NAME:${{ steps.date.outputs.tag }}-packer-${{ steps.packer.outputs.version }}"
