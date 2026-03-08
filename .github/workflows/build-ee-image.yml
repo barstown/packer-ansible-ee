@@ -49,11 +49,6 @@ jobs:
         run: |
           version="$(docker run --rm "$REGISTRY/$IMAGE_NAME:latest" packer version | awk 'NR==1 {sub(/^v/, "", $2); print $2}')"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Image build metadata"
-            echo "- Date tag: ${{ steps.date.outputs.tag }}"
-            echo "- Packer version: $version"
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Add date and version tags
         run: |
