@@ -45,7 +45,7 @@ jobs:
         run: |
           uv run ansible-builder build -v3 \
           --container-runtime docker \
-          -t "$REGISTRY/$IMAGE_NAME:latest
+          -t "$REGISTRY/$IMAGE_NAME:latest"
 
       - name: Detect Packer version from image
         id: packer
