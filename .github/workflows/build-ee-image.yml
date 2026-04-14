@@ -20,13 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           python-version: "3.12"
 
-      - name: Install ansible-builder
-        run: pip install ansible-builder
+      - name: Sync project deps
+        run: uv sync --frozen
 
       - name: Log in to GHCR
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
@@ -43,7 +43,9 @@ jobs:
 
       - name: Build image with latest tag
         run: |
-          ansible-builder build -v3 --container-runtime docker -t "$REGISTRY/$IMAGE_NAME:latest"
+          uv run ansible-builder build -v3 \
+          --container-runtime docker \
+          -t "$REGISTRY/$IMAGE_NAME:latest
 
       - name: Detect Packer version from image
         id: packer
