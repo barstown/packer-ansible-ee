@@ -3,5 +3,18 @@
   "extends": [
     "config:recommended"
   ],
-  "automerge": false
+  "automerge": false,
+  "packageRules": [
+    {
+      "description": "Lock python to <3.13",
+      "matchPackageNames": ["python"],
+      "allowedVersions": "<3.13"
+    },
+    {
+      "description": "Lock python to <3.13",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["python"],
+      "allowedVersions": "<3.13"
+    }
+  ]
 }
