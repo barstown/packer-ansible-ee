@@ -4,7 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "ansible-builder==3.1.1",
-    "ansible-core==2.21.1",
+    "ansible-core==2.21.2",
     "ansible-lint==26.6.0",
     "setuptools>=83.0.0,<83.1.0",
 ]
