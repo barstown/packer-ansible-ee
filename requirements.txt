@@ -1,2 +1,2 @@
 git+https://github.com/ansible/ansible-sign
-receptorctl
+receptorctl>=1.6.7
