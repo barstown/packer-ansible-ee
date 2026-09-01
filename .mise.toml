@@ -1,6 +1,6 @@
 [tools]
 python = "3.12"
-uv = "0.12.7"
+uv = "0.12.8"
 
 [settings]
 python.uv_venv_auto = true
