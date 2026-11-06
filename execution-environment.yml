@@ -50,7 +50,6 @@ additional_build_steps:
       && rm /tmp/packer.zip
 
   append_final:
-    # Playbooks invoke Packer at /usr/bin/packer; keep it there.
     - ARG PACKER_VERSION
     - COPY --from=builder --chmod=0755 /opt/packer/packer /usr/bin/packer
     - LABEL io.packer.version="${PACKER_VERSION}"
