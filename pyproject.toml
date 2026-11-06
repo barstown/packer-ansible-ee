@@ -1,10 +1,24 @@
 [project]
-name = "ansible-controller"
+name = "packer-ansible-ee"
 version = "0.1.0"
-requires-python = ">=3.12"
-dependencies = [
-    "ansible-builder==3.2.0",
-    "ansible-core==2.21.5",
-    "ansible-lint==26.11.0",
-    "setuptools>=84.2.0,<84.3.0",
+# ansible-core 2.16 is the last line that manages RHEL 8 (Python 3.6) hosts, and
+# it supports controller Python up to 3.12.
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+# Installed into the execution environment. `mise run requirements` exports the
+# locked closure of this group to requirements.txt for ansible-builder.
+ee = [
+    "ansible-core==2.16.20",
+    "ansible-runner==2.4.3",
 ]
+# Local and CI tooling only; never installed into the image.
+dev = [
+    "ansible-builder==3.2.0",
+    "ansible-lint==26.11.0",
+]
+
+[tool.uv]
+# Install both groups locally so the venv runs the same ansible-core as the EE.
+default-groups = ["dev", "ee"]

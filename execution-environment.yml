@@ -1,52 +1,55 @@
 ---
+# https://docs.ansible.com/projects/builder/en/latest/definition/
+# Build with `mise run build`: it generates requirements.txt from uv.lock and
+# passes the mise-pinned Packer version and checksum as build args.
 version: 3
 
-build_arg_defaults:
-  ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: '--pre'
+images:
+  base_image:
+    # Rocky's minimal image uses microdnf, and its BaseOS/AppStream repos carry
+    # sshpass and xorriso, which UBI's repos do not. Renovate bumps the tag and
+    # digest.
+    name: quay.io/rockylinux/rockylinux:10.2-minimal@sha256:bc5c1e7a2ec7f4bcef1e51c7f0ebb2d43f05409e0108cdd34f693921d0604360
 
 dependencies:
+  # EL10's platform Python is 3.12, the newest that ansible-core 2.16 supports.
   python_interpreter:
-    package_system: python3.12
+    package_system: python3
     python_path: /usr/bin/python3.12
+  # Unversioned here: the base stage installs these under PIP_CONSTRAINT (set
+  # below), so their versions come from uv.lock like everything else.
   ansible_core:
-    package_pip: ansible-core>=2.15.1,<2.21
+    package_pip: ansible-core
   ansible_runner:
     package_pip: ansible-runner
   galaxy: requirements.yml
   python: requirements.txt
   system: bindep.txt
 
-images:
-  base_image:
-    name: quay.io/centos/centos:stream10
-
-# Custom package manager path for the RHEL based images
-# options:
-#  package_manager_path: /usr/bin/microdnf
-
-# additional_build_files:
-#     - src: files/ansible.cfg
-#       dest: configs
+options:
+  package_manager_path: /usr/bin/microdnf
 
 additional_build_steps:
   prepend_base:
-    - RUN echo This is a prepend base command!
-    # Enable Non-default stream before packages provided by it can be installed. (optional)
-    # - RUN $PKGMGR module enable postgresql:15 -y
-    # - RUN $PKGMGR install -y postgresql
-  # prepend_galaxy:
-  #   - COPY _build/configs/ansible.cfg /etc/ansible/ansible.cfg
-  append_base:
-    - RUN $PYCMD -m pip install -U pip
-  prepend_final: |
-    RUN $PKGMGR install -y dnf-plugins-core epel-release
-    RUN $PKGMGR config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-    RUN $PKGMGR upgrade -y --refresh
-    RUN $PKGMGR install -y packer opentofu
-    RUN $PKGMGR clean all
-    RUN whoami
-    RUN cat /etc/os-release
+    - ARG PIP_CONSTRAINT=/output/constraints.txt
+    - COPY _build/requirements.txt /output/constraints.txt
+    # The base image is pinned by digest; this pulls in errata released since.
+    - RUN $PKGMGR upgrade -y --nodocs --setopt install_weak_deps=0 && $PKGMGR clean all
+
+  append_builder:
+    - ARG PACKER_VERSION
+    - ARG PACKER_SHA256
+    - >-
+      RUN test -n "$PACKER_VERSION" -a -n "$PACKER_SHA256"
+      || { echo "Build with 'mise run build' to set PACKER_VERSION and PACKER_SHA256" >&2; exit 1; }
+    - >-
+      RUN curl -fsSLo /tmp/packer.zip
+      "https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip"
+      && echo "${PACKER_SHA256}  /tmp/packer.zip" | sha256sum -c -
+      && $PYCMD -m zipfile -e /tmp/packer.zip /opt/packer/
+      && rm /tmp/packer.zip
+
   append_final:
-    - COPY --from=quay.io/ansible/receptor:devel /usr/bin/receptor /usr/bin/receptor
-    - RUN echo This is a post-install command!
-    - RUN ls -la /etc
+    - ARG PACKER_VERSION
+    - COPY --from=builder --chmod=0755 /opt/packer/packer /usr/local/bin/packer
+    - LABEL io.packer.version="${PACKER_VERSION}"
