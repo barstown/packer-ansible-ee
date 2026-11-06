@@ -1,4 +1,0 @@
-NFS
-LDAP
-UID
-GID

@@ -1,0 +1,38 @@
+# https://lefthook.dev/configuration/
+[pre-commit]
+parallel = true
+skip = ["merge", "rebase"]
+
+# mise fmt rewrites the config in place, and a mise lock that reads it
+# mid-rewrite prunes every tool from the lockfile, so the two run piped.
+[[pre-commit.jobs]]
+name = "mise"
+glob = [".mise/config.toml"]
+
+[pre-commit.jobs.group]
+piped = true
+
+[[pre-commit.jobs.group.jobs]]
+name = "format-mise"
+run = "mise fmt"
+stage_fixed = true
+
+[[pre-commit.jobs.group.jobs]]
+name = "lock-mise"
+run = "mise lock && git add .mise/mise.lock"
+
+[pre-commit.commands.uv-lock]
+glob = ["pyproject.toml", "uv.lock"]
+run = "uv lock --check"
+
+[pre-commit.commands.ansible-lint]
+glob = ["execution-environment.yml", "requirements.yml", ".ansible-lint"]
+run = "ansible-lint"
+
+[pre-commit.commands.actionlint]
+glob = [".github/workflows/*.yml"]
+run = "actionlint {staged_files}"
+
+[pre-commit.commands.zizmor]
+glob = [".github/workflows/*.yml"]
+run = "zizmor --offline {staged_files}"

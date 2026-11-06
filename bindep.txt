@@ -1,9 +1,8 @@
-epel-release [platform:rpm]
+# Runtime packages for Packer builds driven by Ansible.
 git-core [platform:rpm]
-git-lfs [platform:rpm]
-openssl-devel [platform:rpm compile]
-python-unversioned-command [platform:rpm]
+# ansible-playbook connects through Packer's SSH proxy with the OpenSSH client.
+openssh-clients [platform:rpm]
 rsync [platform:rpm]
 sshpass [platform:rpm]
-unzip [platform:rpm]
+# Packer's `cd_files`/`cd_content` (e.g. kickstart media) shell out to xorriso.
 xorriso [platform:rpm]

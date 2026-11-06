@@ -1,3 +1,12 @@
-.tox/*
+# ansible-builder build context
+/context/
+# Generated from uv.lock by `mise run requirements`
+/requirements.txt
+# Ansible cache files
+.ansible/
+# Python virtual environment
 .venv/
-/context
+# Local overrides
+.private/
+mise.local.toml
+.mise/config.local.toml

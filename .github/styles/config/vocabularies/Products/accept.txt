@@ -1,9 +1,0 @@
-(?i)EditorConfig
-(?i)Todo
-[Aa]nsible
-Active Directory
-AWX
-Jinja
-Kerberos
-pip[x]
-Todo Tree

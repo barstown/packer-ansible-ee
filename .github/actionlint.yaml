@@ -1,0 +1,5 @@
+# https://github.com/rhysd/actionlint/blob/main/docs/config.md
+self-hosted-runner:
+  # GitHub-hosted, but newer than the runner labels actionlint knows about.
+  labels:
+    - ubuntu-26.04

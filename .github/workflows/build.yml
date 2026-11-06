@@ -1,0 +1,124 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Build EE image
+
+on:
+  # Pull requests build and smoke test but never publish.
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - ".vscode/**"
+  # Monthly rebuild picks up OS errata on top of the pinned base image.
+  schedule:
+    - cron: "0 5 1 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  TEST_TAG: packer-ansible-ee:ci
+
+jobs:
+  build:
+    name: Build, test and publish
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          experimental: true
+          install_args: --locked python uv
+          # This workflow publishes, so don't restore tool caches.
+          cache: false
+
+      - name: Sync Python dependencies
+        run: uv sync --locked
+
+      - name: Generate build context
+        run: mise run create
+
+      - name: Read pinned Packer version
+        id: packer
+        run: scripts/packer-build-args.py >> "$GITHUB_OUTPUT"
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value={{date 'YY.MM' tz='UTC'}},enable={{is_default_branch}}
+            type=raw,value={{date 'YY.MM.DD' tz='UTC'}}-${{ steps.packer.outputs.PACKER_VERSION }},enable={{is_default_branch}}
+            type=ref,event=pr
+          labels: |
+            org.opencontainers.image.title=packer-ansible-ee
+            org.opencontainers.image.description=Ansible execution environment with Packer for building RHEL (8, 9, 10) and Debian templates
+            io.packer.version=${{ steps.packer.outputs.PACKER_VERSION }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: context
+          file: context/Containerfile
+          build-args: |
+            PACKER_VERSION=${{ steps.packer.outputs.PACKER_VERSION }}
+            PACKER_SHA256=${{ steps.packer.outputs.PACKER_SHA256 }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.TEST_TAG }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test
+        env:
+          CONTAINER_RUNTIME: docker
+        run: scripts/smoke-test.sh "$TEST_TAG"
+
+      - name: Log in to GHCR
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Rebuilds from the cache populated above, so this only adds the
+      # provenance and SBOM attestations and pushes.
+      - name: Publish image
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: context
+          file: context/Containerfile
+          build-args: |
+            PACKER_VERSION=${{ steps.packer.outputs.PACKER_VERSION }}
+            PACKER_SHA256=${{ steps.packer.outputs.PACKER_SHA256 }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          push: true
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha

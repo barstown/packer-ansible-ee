@@ -1,6 +1,7 @@
 {
     "files.trimFinalNewlines": true,
-    "ansible.python.interpreterPath": "/usr/bin/python3",
+    "ansible.python.interpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
     "todo-tree.general.tags": [
       "BUG",
       "FIXME",
@@ -8,10 +9,7 @@
       "TODO",
     ],
     "todo-tree.filtering.excludeGlobs": [
-      "**/doc/*/**",
-      "**/collections/ansible_collections/*/**",
+      "**/context/**",
       "**/*.md"
-    ],
-    "vale.valeCLI.config": "${workspaceFolder}/.vale.ini",
-    "vale.enableSpellcheck": true
+    ]
 }

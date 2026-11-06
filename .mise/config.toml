@@ -1,0 +1,66 @@
+# https://mise.jdx.dev/configuration.html
+[tools]
+# Baked into the EE image. `mise run build` reads this version and its
+# linux-x64 checksum from .mise/mise.lock, so this line is the only pin.
+"aqua:hashicorp/packer" = "1.16.2"
+"aqua:evilmartians/lefthook" = "2.2.2"
+"aqua:rhysd/actionlint" = "1.7.12"
+"aqua:zizmorcore/zizmor" = "1.31.1"
+"python" = "3.12"
+"uv" = "0.13.7"
+
+[env]
+IMAGE = "ghcr.io/barstown/packer-ansible-ee"
+
+[settings]
+lockfile = true
+python.uv_venv_auto = "create|source"
+
+[tasks.requirements]
+description = "Export the EE's locked Python dependencies for ansible-builder"
+sources = ["pyproject.toml", "uv.lock"]
+outputs = ["requirements.txt"]
+run = "uv export --locked --only-group ee --no-hashes --no-header --no-annotate --no-emit-project --output-file requirements.txt"
+
+[tasks.create]
+description = "Generate the build context (context/Containerfile)"
+depends = ["requirements"]
+run = "ansible-builder create --output-filename Containerfile"
+
+[tasks.build]
+description = "Build the EE image locally"
+depends = ["requirements"]
+usage = 'arg "[tag]" default="dev" help="Image tag"'
+run = '''
+set -eu
+eval "$(scripts/packer-build-args.py)"
+ansible-builder build --verbosity 2 \
+  --tag "$IMAGE:${usage_tag}" \
+  --build-arg PACKER_VERSION="$PACKER_VERSION" \
+  --build-arg PACKER_SHA256="$PACKER_SHA256"
+'''
+
+[tasks.test]
+description = "Smoke test a built EE image"
+usage = 'arg "[tag]" default="dev" help="Image tag"'
+run = 'scripts/smoke-test.sh "$IMAGE:${usage_tag}"'
+
+[tasks.lint]
+description = "Run every linter"
+depends = ["lint:*"]
+
+[tasks."lint:ansible"]
+description = "Lint the EE definition and collection requirements"
+run = "ansible-lint"
+
+[tasks."lint:actionlint"]
+description = "Lint GitHub Actions workflows"
+run = "actionlint -color"
+
+[tasks."lint:zizmor"]
+description = "Audit GitHub Actions workflows for security issues"
+run = "zizmor --color=always --no-progress .github"
+
+[hooks]
+# CI installs only the tools each job needs, which may not include lefthook.
+postinstall = "if command -v lefthook >/dev/null; then lefthook install; fi"
