@@ -23,7 +23,7 @@ check() {
     echo "ok: $name $actual"
 }
 
-check packer "$PACKER_VERSION" "$(run packer version | awk 'NR == 1 { sub(/^v/, "", $2); print $2 }')"
+check packer "$PACKER_VERSION" "$(run /usr/bin/packer version | awk 'NR == 1 { sub(/^v/, "", $2); print $2 }')"
 check ansible-core "$ansible_core" "$(run python3.12 -c 'import ansible.release; print(ansible.release.__version__)')"
 check python 3.12 "$(run python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
 check user 1000 "$(run id -u)"
