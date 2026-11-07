@@ -136,13 +136,14 @@ rather than relaxing them, and release the result as a major.
 
 | Workflow                                                   | Runs on                                          | Does                                                    |
 | ---------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------- |
-| [CI](.github/workflows/ci.yml)                             | Pull requests and `main`                         | Lints; reports `CI Success`                             |
+| [CI](.github/workflows/ci.yml)                             | Pull requests                                    | Runs `mise run lint` as the `CI Success` check          |
 | [Release Please](.github/workflows/release-please.yml)     | Pushes to `main`                                 | Maintains the release pull request and creates releases |
 | [Build EE image](.github/workflows/build.yml)              | Pull requests and releases                       | Builds and smoke tests; publishes releases              |
 
 - `CI Success` and `Build, test and publish` are the required checks. Both
-  pass on release pull requests, where the lint and build jobs are skipped
-  because they only change `CHANGELOG.md` and the manifest.
+  pass on release pull requests, where the jobs are skipped because those
+  only change `CHANGELOG.md` and the manifest. Nothing runs CI on `main`
+  itself: it only changes through pull requests that passed it.
 - Release Please authenticates as the `release-bot` GitHub App, using the
   `RELEASE_BOT_CLIENT_ID` and `RELEASE_BOT_PRIVATE_KEY` repository secrets. A
   release made with `GITHUB_TOKEN` wouldn't trigger the build workflow, and a

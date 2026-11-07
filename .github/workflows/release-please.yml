@@ -20,6 +20,7 @@ jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-26.04
+    timeout-minutes: 5
     permissions: {}
     steps:
       # Releases created with GITHUB_TOKEN don't trigger other workflows, so the

@@ -31,6 +31,7 @@ jobs:
       ${{ !(startsWith(github.head_ref, 'release-please--')
       && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -145,6 +146,7 @@ jobs:
     needs: build
     if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-26.04
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
