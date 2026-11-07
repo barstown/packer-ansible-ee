@@ -138,7 +138,7 @@ rather than relaxing them, and release the result as a major.
 | ---------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------- |
 | [CI](.github/workflows/ci.yml)                             | Pull requests and `main`                         | Lints; reports `CI Success`                             |
 | [Release Please](.github/workflows/release-please.yml)     | Pushes to `main`                                 | Maintains the release pull request and creates releases |
-| [Build EE image](.github/workflows/build.yml)              | Pull requests, releases, monthly, manual         | Builds and smoke tests; publishes releases              |
+| [Build EE image](.github/workflows/build.yml)              | Pull requests and releases                       | Builds and smoke tests; publishes releases              |
 
 - `CI Success` and `Build, test and publish` are the required checks. Both
   pass on release pull requests, where the lint and build jobs are skipped
@@ -169,27 +169,23 @@ Several changes can go out together by leaving the release pull request open.
 To force a specific version, add a `Release-As: X.Y.Z` footer to a commit
 message (in the squash merge dialog's description field).
 
-### Monthly rebuilds
+A release is built once, from its tag, by the workflow file in that tag, and
+is never rebuilt. If the build fails, re-run the failed run from the Actions
+tab; re-running is the only way to publish a tag that doesn't have an image
+yet.
 
-On the 1st of each month at 05:00 UTC, the build workflow rebuilds the latest
-release from its tag, not from `main`, and pushes it under the same tags. The
-base image is pinned by digest, so it's the `microdnf upgrade` step in the
-build that picks up the errata. Unreleased changes on `main` are never
-included.
+### OS security updates
 
-Because the workflow file comes from `main` but the source comes from the tag,
-cut a release soon after changing how the image is built, so the two don't
-drift apart.
+There are no scheduled rebuilds. OS errata reach the image through releases:
+every release build runs `microdnf upgrade` without the layer cache, so it
+picks up whatever Rocky has published, even when the release itself only
+changes CI. **Merge the release pull request regularly**, or the published
+image falls behind on errata. Renovate's weekly lock file maintenance and base
+image digest updates mean there is almost always something pending.
 
-To rebuild by hand:
-
-```bash
-gh workflow run build.yml                 # the latest release
-gh workflow run build.yml -f tag=1.4.2    # a specific release
-```
-
-Rebuilding an older release only updates its own `X.Y.Z` tag; the floating
-`X.Y`, `X` and `latest` tags stay on the latest release.
+For an urgent fix, merge the release pull request. If it's empty, merge a small
+`fix:` pull request first, e.g. `fix: rebuild for CVE-2026-12345`, so that
+there is something to release.
 
 ## Published images
 
@@ -199,7 +195,7 @@ Images are published to `ghcr.io/barstown/packer-ansible-ee`:
 | ------------------------- | -------- | ------------------------------------------- |
 | `<MAJOR>`                 | `1`      | the newest release with no breaking changes |
 | `<MAJOR>.<MINOR>`         | `1.4`    | patch releases of that minor                |
-| `<MAJOR>.<MINOR>.<PATCH>` | `1.4.2`  | one release, rebuilt monthly for OS errata  |
+| `<MAJOR>.<MINOR>.<PATCH>` | `1.4.2`  | one release; never changes                  |
 | `latest`                  | `latest` | the newest release, including breaking ones |
 
 What a bump means for someone running jobs:
@@ -211,11 +207,12 @@ What a bump means for someone running jobs:
 - **Patch**: fixes, patch updates, and changes to the build that don't affect
   what's in the image.
 
-Every tag moves when its release is rebuilt, so the only immutable reference is
-a digest (`ghcr.io/barstown/packer-ansible-ee:1@sha256:…`). Consumers who use
-Renovate get this with `docker:pinDigests`. Only the newest release is rebuilt
-monthly: an older `1.4.2` stops getting OS errata once `1.4.3` or `1.5.0` is
-out.
+`X.Y.Z` tags are immutable: each release is built once and never rebuilt. The
+floating `X.Y`, `X` and `latest` tags move to each new release, and releases
+publish one at a time, in order, so they never move backwards. Older releases
+don't get OS errata; only a newer release does. Consumers who want Renovate to
+update them can pin a full version, or pin a floating tag by digest with
+`docker:pinDigests`.
 
 Each image carries OCI labels, including `org.opencontainers.image.version`
 (the release) and `io.packer.version`, plus build provenance and an SBOM:

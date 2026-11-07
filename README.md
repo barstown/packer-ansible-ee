@@ -19,9 +19,8 @@ In AWX, go to **Administration → Execution Environments → Add**:
 The image is public, so no registry credential is needed. Then pick this
 execution environment on the job templates that run Packer.
 
-The image is rebuilt every month for OS security fixes. "Always pull" makes
-AWX use the rebuilt image; with the default policy, a node keeps whichever copy
-it pulled first.
+`:1` moves to each new 1.x release. "Always pull" makes AWX use the newest
+one; with the default policy, a node keeps whichever copy it pulled first.
 
 ## Using Packer
 
@@ -64,13 +63,14 @@ Python 3.6 isn't supported by later versions.
 
 ## Choosing a tag
 
-Use the major tag, `:1`. It gets every new feature, fix and monthly rebuild,
-and never a breaking change: those go out as `:2`. Each
+Use the major tag, `:1`. It gets every new feature, fix and OS security
+update, and never a breaking change: those go out as `:2`. To stay on one
+exact image, use a full version such as `:1.4.2`; it never changes. Each
 [release](https://github.com/barstown/packer-ansible-ee/releases) lists what
 changed and which Packer version it ships, and
 [CHANGELOG.md](CHANGELOG.md) has the full history.
 
-The other tags (`:1.4`, `:1.4.2`, `latest`) and digest pinning are described in
+All the tags are described in
 [CONTRIBUTING.md](CONTRIBUTING.md#published-images).
 
 ## Contributing
