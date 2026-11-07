@@ -2,47 +2,29 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: CI
 
+# Pull requests only: main only changes through pull requests that passed this.
 on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "**.md"
-      - ".release-please-manifest.json"
-  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   lint:
-    name: ${{ matrix.name }}
+    # The required check; keep the name in sync with the main ruleset.
+    name: CI Success
     # Release PRs only touch the changelog and manifest.
     if: >-
       ${{ !(startsWith(github.head_ref, 'release-please--')
       && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-26.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Ansible Lint
-            task: lint:ansible
-            tools: python uv
-            uv: true
-          - name: Actionlint
-            task: lint:actionlint
-            tools: aqua:rhysd/actionlint
-          - name: Zizmor
-            task: lint:zizmor
-            tools: aqua:zizmorcore/zizmor
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,30 +35,15 @@ jobs:
         uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
         with:
           experimental: true
-          install_args: --locked ${{ matrix.tools }}
+          install_args: --locked
 
       - name: Sync Python dependencies
-        if: ${{ matrix.uv }}
         run: uv sync --locked
 
-      - name: Run ${{ matrix.task }}
+      # Runs every lint:* task in parallel, as `mise run lint` does locally,
+      # and reports all failures rather than stopping at the first.
+      - name: Lint
         env:
           # zizmor's online audits query the GitHub API
-          GH_TOKEN: ${{ matrix.task == 'lint:zizmor' && github.token || '' }}
-          TASK: ${{ matrix.task }}
-        run: mise run "$TASK"
-
-  status:
-    if: ${{ !cancelled() }}
-    name: CI Success
-    needs:
-      - lint
-    runs-on: ubuntu-26.04
-    permissions: {}
-    steps:
-      - name: Any jobs failed?
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
-
-      - name: All jobs passed
-        run: echo "All jobs passed or skipped"
+          GH_TOKEN: ${{ github.token }}
+        run: mise run --continue-on-error lint

@@ -9,20 +9,11 @@ on:
   release:
     types:
       - published
-  schedule:
-    - cron: "0 5 1 * *"
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Release tag to rebuild (default the latest release)
-        required: false
-        type: string
 
 concurrency:
-  # Rebuilds share one group so they can't race on the floating tags. Each
-  # release gets its own group: GitHub keeps only one pending run per group,
-  # so a later rebuild could otherwise cancel a queued release.
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.release.tag_name || 'publish' }}
+  # Releases share one group and run in order, so an older release can't
+  # finish last and move the floating tags back.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || 'release' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -40,53 +31,18 @@ jobs:
       ${{ !(startsWith(github.head_ref, 'release-please--')
       && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
     outputs:
-      tag: ${{ steps.release.outputs.tag }}
       packer-version: ${{ steps.packer.outputs.PACKER_VERSION }}
     steps:
-      - name: Resolve release
-        id: release
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          PRERELEASE: ${{ github.event.release.prerelease }}
-          INPUT_TAG: ${{ inputs.tag }}
-        run: |
-          if [ -n "$RELEASE_TAG" ]; then
-            # The release that triggered this run is the newest one. Don't ask
-            # the API, whose latest release can lag behind the event.
-            tag="$RELEASE_TAG"
-            is_latest="$([ "$PRERELEASE" = true ] && echo false || echo true)"
-          else
-            latest="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)" || {
-              echo "::error::No release to build yet." >&2
-              exit 1
-            }
-            tag="${INPUT_TAG:-$latest}"
-            # Rebuilding an older release must not move the floating tags back.
-            is_latest="$([ "$tag" = "$latest" ] && echo true || echo false)"
-          fi
-          if ! [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::'$tag' is not a release tag (MAJOR.MINOR.PATCH)." >&2
-            exit 1
-          fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "latest=$is_latest" >> "$GITHUB_OUTPUT"
-
-      # Publishes always build the release tag's source, never main's HEAD.
+      # On a release, this checks out the release tag.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ steps.release.outputs.tag && format('refs/tags/{0}', steps.release.outputs.tag) || '' }}
           persist-credentials: false
-
-      - name: Source revision
-        id: revision
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Mise
         uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
@@ -118,17 +74,16 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=semver,pattern={{version}},value=${{ steps.release.outputs.tag }},enable=${{ steps.release.outputs.tag != '' }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.release.outputs.tag }},enable=${{ steps.release.outputs.latest == 'true' }}
-            type=semver,pattern={{major}},value=${{ steps.release.outputs.tag }},enable=${{ steps.release.outputs.latest == 'true' }}
-            type=raw,value=latest,enable=${{ steps.release.outputs.latest == 'true' }}
+            type=semver,pattern={{version}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=semver,pattern={{major}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
             type=ref,event=pr
           # Override the Rocky base image's labels with this project's.
           labels: &oci-metadata |
             org.opencontainers.image.title=packer-ansible-ee
             org.opencontainers.image.description=Ansible execution environment with Packer for building RHEL (8, 9, 10) and Debian templates
-            org.opencontainers.image.version=${{ steps.release.outputs.tag }}
-            org.opencontainers.image.revision=${{ steps.revision.outputs.sha }}
+            org.opencontainers.image.version=${{ github.event.release.tag_name }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
             org.opencontainers.image.authors=${{ github.repository_owner }}
             io.packer.version=${{ steps.packer.outputs.PACKER_VERSION }}
@@ -137,9 +92,8 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      # Publishing builds skip the layer cache: the Containerfile is unchanged
-      # between monthly rebuilds, so a cached `microdnf upgrade` layer would
-      # carry no new errata.
+      # Release builds skip the layer cache, so `microdnf upgrade` always pulls
+      # the current errata instead of reusing a layer from an earlier build.
       - name: Build image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -151,7 +105,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ env.TEST_TAG }}
           load: true
-          no-cache: ${{ steps.release.outputs.tag != '' }}
+          no-cache: ${{ github.event_name == 'release' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -160,22 +114,8 @@ jobs:
           CONTAINER_RUNTIME: docker
         run: scripts/smoke-test.sh "$TEST_TAG"
 
-      # A release published during this rebuild runs in its own concurrency
-      # group; don't let this run move the floating tags back over it.
-      - name: Check no newer release
-        if: ${{ github.event_name != 'release' && steps.release.outputs.latest == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          latest="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)"
-          if [ "$latest" != "$TAG" ]; then
-            echo "::error::$latest was released during this rebuild of $TAG; its own run publishes it." >&2
-            exit 1
-          fi
-
       - name: Log in to GHCR
-        if: ${{ steps.release.outputs.tag != '' }}
+        if: ${{ github.event_name == 'release' }}
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ${{ env.REGISTRY }}
@@ -185,7 +125,7 @@ jobs:
       # Rebuilds from the cache populated above, so this only adds the
       # provenance and SBOM attestations and pushes.
       - name: Publish image
-        if: ${{ steps.release.outputs.tag != '' }}
+        if: ${{ github.event_name == 'release' }}
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: context
@@ -206,13 +146,14 @@ jobs:
     needs: build
     if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-26.04
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
       - name: Append image details
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.build.outputs.tag }}
+          TAG: ${{ github.event.release.tag_name }}
           PACKER_VERSION: ${{ needs.build.outputs.packer-version }}
           IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}
         run: |
@@ -227,7 +168,5 @@ jobs:
           ### Image
 
           - **Packer**: $PACKER_VERSION
-          - **Pull**: ${tick}$IMAGE:$TAG${tick}
-
-          Rebuilt monthly under the same tags to pick up OS errata."
+          - **Pull**: ${tick}$IMAGE:$TAG${tick}"
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes "$body"$'\n\n'"$details"
