@@ -11,6 +11,7 @@ on:
       - main
     paths-ignore:
       - "**.md"
+      - ".release-please-manifest.json"
   workflow_dispatch:
 
 concurrency:
@@ -23,6 +24,10 @@ permissions:
 jobs:
   lint:
     name: ${{ matrix.name }}
+    # Release PRs only touch the changelog and manifest.
+    if: >-
+      ${{ !(startsWith(github.head_ref, 'release-please--')
+      && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-26.04
     strategy:
       fail-fast: false

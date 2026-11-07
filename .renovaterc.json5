@@ -68,8 +68,10 @@
       allowedVersions: "<12.0.0",
     },
 
-    // Commit messages. Later rules override earlier ones, so the type rules
-    // come first, then the per-manager scopes, then the 0.x overrides.
+    // Commit messages. release-please reads these to decide the release: feat
+    // bumps minor, everything else bumps patch, and ! bumps major. Later rules
+    // override earlier ones, so the type rules come first, then the
+    // per-manager scopes, then the 0.x overrides, then the ! exceptions.
     {
       description: "Major updates are breaking: feat!",
       matchUpdateTypes: ["major"],
@@ -111,9 +113,18 @@
     },
     {
       matchManagers: ["mise"],
+      matchDepNames: ["!aqua:hashicorp/packer"],
       semanticCommitType: "chore",
       semanticCommitScope: "mise",
       commitMessageTopic: "tool {{depName}}",
+    },
+    {
+      // Packer is baked into the image, so it keeps the feat/fix type from the
+      // rules above, and its scope makes it stand out in the changelog.
+      matchManagers: ["mise"],
+      matchDepNames: ["aqua:hashicorp/packer"],
+      semanticCommitScope: "packer",
+      commitMessageTopic: "Packer",
     },
     {
       // 0.x minors (e.g. uv) can break at any time. If you ever automerge
@@ -130,6 +141,21 @@
       matchUpdateTypes: ["minor"],
       matchCurrentVersion: "/^v?0\\./",
       additionalBranchPrefix: "major-",
+    },
+    {
+      // These never ship in the image, so a breaking update to one must not
+      // cut a major release. Their majors still land on major- branches.
+      description: "Tooling outside the image: no breaking ! prefix",
+      matchManagers: ["github-actions", "renovate-config", "mise"],
+      matchDepNames: ["!aqua:hashicorp/packer"],
+      commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}}):",
+    },
+    {
+      // dev dependency group; calendar-versioned, so it majors every year.
+      description: "ansible-lint is CI tooling: no breaking ! prefix",
+      matchManagers: ["pep621"],
+      matchPackageNames: ["ansible-lint"],
+      commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}}):",
     },
   ],
 }
