@@ -8,6 +8,11 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  # Merges close together would otherwise race to update the release PR.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
