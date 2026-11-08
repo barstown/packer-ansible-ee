@@ -179,7 +179,7 @@ provenance = "github-attestations"
 [[tools.python]]
 version = "3.12.13"
 backend = "core:python"
-specifiers = ["3.12"]
+specifiers = ["3.12.13"]
 
 [tools.python."platforms.linux-arm64"]
 checksum = "sha256:11e713ae1f969385907a76533cc554f6b2e3f1a84896009f91c3fc871034a170"
