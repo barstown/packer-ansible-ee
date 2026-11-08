@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/barstown/packer-ansible-ee/compare/1.0.1...1.0.2) (2026-11-08)
+
+
+### Miscellaneous Chores
+
+* **mise:** pin python to an exact version ([#127](https://github.com/barstown/packer-ansible-ee/issues/127)) ([a0926be](https://github.com/barstown/packer-ansible-ee/commit/a0926beba271af6d4da3ec505fbf7d5098fa2bb5))
+* **mise:** Update tool python (3.12.13 ➔ 3.12.16) ([#129](https://github.com/barstown/packer-ansible-ee/issues/129)) ([08f5995](https://github.com/barstown/packer-ansible-ee/commit/08f59957a2a4ab2923a741d4145d35da156238e1))
+
 ## [1.0.1](https://github.com/barstown/packer-ansible-ee/compare/1.0.0...1.0.1) (2026-11-07)
 
 
