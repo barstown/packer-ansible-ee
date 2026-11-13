@@ -1,161 +1,191 @@
 {
-  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   extends: [
-    // Digest pinning (keeps the base image's @sha256), weekly lock file
-    // maintenance for uv.lock, and the dependency dashboard.
-    "config:best-practices",
-    "docker:enableMajor",
-    // Keep full `# v7.0.1` comments next to pinned action digests.
-    "helpers:pinGitHubActionDigestsToSemver",
-    ":disableRateLimiting",
-    ":semanticCommits",
+    'config:best-practices',
+    'docker:enableMajor',
+    'helpers:pinGitHubActionDigestsToSemver',
+    ':disableRateLimiting',
+    ':semanticCommits',
   ],
-  labels: ["renovate"],
-  dependencyDashboardLabels: ["renovate"],
+  labels: [
+    'renovate',
+  ],
+  dependencyDashboard: {
+    labels: [
+      'renovate',
+    ],
+  },
   customManagers: [
     {
-      // ansible-builder definitions have no built-in manager. base_image is the
-      // only `name:` key in the file.
-      description: "Track the EE base image tag and digest",
-      customType: "regex",
-      managerFilePatterns: ["/(^|/)execution-environment\\.ya?ml$/"],
-      matchStrings: [
-        "name:\\s*[\"']?(?<depName>[^\\s:@\"']+):(?<currentValue>[^\\s@\"']+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?",
+      description: 'Track the EE base image tag and digest',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/(^|/)execution-environment\\.ya?ml$/',
       ],
-      datasourceTemplate: "docker",
+      matchStrings: [
+        'name:\\s*["\']?(?<depName>[^\\s:@"\']+):(?<currentValue>[^\\s@"\']+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?',
+      ],
+      datasourceTemplate: 'docker',
     },
   ],
   packageRules: [
     {
-      // Rocky also publishes dated (10.2.20260525.0-minimal) and floating
-      // (10-minimal) tags; follow point releases only.
-      description: "Follow Rocky Linux minimal point releases",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["quay.io/rockylinux/rockylinux"],
-      allowedVersions: "/^\\d+\\.\\d+-minimal$/",
-    },
-
-    // RHEL 8 compatibility. Packer templates provision RHEL 8 guests, whose
-    // platform Python is 3.6. RHEL 8 maintenance support ends 2029-05-31; once
-    // no RHEL 8 templates are built, delete these rules rather than relaxing
-    // them.
-    {
-      // ansible-core 2.17 dropped Python 3.6 on managed nodes, so 2.16.x is
-      // the last line that can still manage RHEL 8 hosts.
-      description: "rhel8-compat: Hold ansible-core to 2.16.x",
-      matchPackageNames: ["ansible-core"],
-      allowedVersions: "<2.17",
+      description: 'Follow Rocky Linux minimal point releases',
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'quay.io/rockylinux/rockylinux',
+      ],
+      allowedVersions: '/^\\d+\\.\\d+-minimal$/',
     },
     {
-      // ansible-core 2.16 supports controller Python up to 3.12. The mise
-      // manager reports python by depName, so match it both ways.
-      description: "rhel8-compat: Hold python to <3.13",
-      matchPackageNames: ["python"],
-      allowedVersions: "<3.13",
+      description: 'rhel8-compat: Hold ansible-core to 2.16.x',
+      matchPackageNames: [
+        'ansible-core',
+      ],
+      allowedVersions: '<2.17',
     },
     {
-      description: "rhel8-compat: Hold python to <3.13 in mise",
-      matchManagers: ["mise"],
-      matchDepNames: ["python"],
-      allowedVersions: "<3.13",
+      description: 'rhel8-compat: Hold python to <3.13',
+      matchPackageNames: [
+        'python',
+      ],
+      allowedVersions: '<3.13',
     },
     {
-      // community.general 12.0.0 requires ansible-core 2.17, so 11.x is the
-      // last line that installs alongside the ansible-core hold above.
-      description: "rhel8-compat: Hold community.general to 11.x",
-      matchManagers: ["ansible-galaxy"],
-      matchPackageNames: ["community.general"],
-      allowedVersions: "<12.0.0",
-    },
-
-    // Commit messages. release-please reads these to decide the release: feat
-    // bumps minor, everything else bumps patch, and ! bumps major. Later rules
-    // override earlier ones, so the type rules come first, then the
-    // per-manager scopes, then the 0.x overrides, then the ! exceptions.
-    {
-      description: "Major updates are breaking: feat!",
-      matchUpdateTypes: ["major"],
-      semanticCommitType: "feat",
-      commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}})!:",
-      commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
+      description: 'rhel8-compat: Hold python to <3.13 in mise',
+      matchManagers: [
+        'mise',
+      ],
+      matchDepNames: [
+        'python',
+      ],
+      allowedVersions: '<3.13',
     },
     {
-      matchUpdateTypes: ["minor"],
-      semanticCommitType: "feat",
-      commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
+      description: 'rhel8-compat: Hold community.general to 11.x',
+      matchManagers: [
+        'ansible-galaxy',
+      ],
+      matchPackageNames: [
+        'community.general',
+      ],
+      allowedVersions: '<12.0.0',
     },
     {
-      matchUpdateTypes: ["patch"],
-      semanticCommitType: "fix",
-      commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
+      description: 'Major updates are breaking: feat!',
+      matchUpdateTypes: [
+        'major',
+      ],
+      semanticCommitType: 'feat',
+      commitMessagePrefix: '{{semanticCommitType}}({{semanticCommitScope}})!:',
+      commitMessageExtra: '({{currentVersion}} ➔ {{newVersion}})',
     },
     {
-      matchUpdateTypes: ["digest"],
-      semanticCommitType: "fix",
-      commitMessageExtra: "({{currentDigestShort}} ➔ {{newDigestShort}})",
+      matchUpdateTypes: [
+        'minor',
+      ],
+      semanticCommitType: 'feat',
+      commitMessageExtra: '({{currentVersion}} ➔ {{newVersion}})',
     },
     {
-      matchDatasources: ["docker"],
-      semanticCommitScope: "container",
-      commitMessageTopic: "image {{depName}}",
+      matchUpdateTypes: [
+        'patch',
+      ],
+      semanticCommitType: 'fix',
+      commitMessageExtra: '({{currentVersion}} ➔ {{newVersion}})',
     },
     {
-      matchManagers: ["github-actions"],
-      semanticCommitType: "ci",
-      semanticCommitScope: "github-action",
-      commitMessageTopic: "action {{depName}}",
+      matchUpdateTypes: [
+        'digest',
+      ],
+      semanticCommitType: 'fix',
+      commitMessageExtra: '({{currentDigestShort}} ➔ {{newDigestShort}})',
     },
     {
-      matchManagers: ["renovate-config"],
-      semanticCommitType: "chore",
-      semanticCommitScope: "renovate-config",
-      commitMessageTopic: "config {{depName}}",
+      matchDatasources: [
+        'docker',
+      ],
+      semanticCommitScope: 'container',
+      commitMessageTopic: 'image {{depName}}',
     },
     {
-      matchManagers: ["mise"],
-      matchDepNames: ["!aqua:hashicorp/packer"],
-      semanticCommitType: "chore",
-      semanticCommitScope: "mise",
-      commitMessageTopic: "tool {{depName}}",
+      matchManagers: [
+        'github-actions',
+      ],
+      semanticCommitType: 'ci',
+      semanticCommitScope: 'github-action',
+      commitMessageTopic: 'action {{depName}}',
     },
     {
-      // Packer is baked into the image, so it keeps the feat/fix type from the
-      // rules above, and its scope makes it stand out in the changelog.
-      matchManagers: ["mise"],
-      matchDepNames: ["aqua:hashicorp/packer"],
-      semanticCommitScope: "packer",
-      commitMessageTopic: "Packer",
+      matchManagers: [
+        'renovate-config',
+      ],
+      semanticCommitType: 'chore',
+      semanticCommitScope: 'renovate-config',
+      commitMessageTopic: 'config {{depName}}',
     },
     {
-      // 0.x minors (e.g. uv) can break at any time. If you ever automerge
-      // minors, add `matchCurrentVersion: "!/^v?0/"` to that rule.
-      description: "zer0ver: give 0.x minors the breaking ! prefix",
-      matchUpdateTypes: ["minor"],
-      matchCurrentVersion: "/^v?0\\./",
-      semanticCommitType: "feat",
-      commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}})!:",
-      commitMessageExtra: "({{currentVersion}} ➔ {{newVersion}})",
+      matchManagers: [
+        'mise',
+      ],
+      matchDepNames: [
+        '!aqua:hashicorp/packer',
+      ],
+      semanticCommitType: 'chore',
+      semanticCommitScope: 'mise',
+      commitMessageTopic: 'tool {{depName}}',
     },
     {
-      description: "zer0ver: route 0.x minors onto major- branches",
-      matchUpdateTypes: ["minor"],
-      matchCurrentVersion: "/^v?0\\./",
-      additionalBranchPrefix: "major-",
+      matchManagers: [
+        'mise',
+      ],
+      matchDepNames: [
+        'aqua:hashicorp/packer',
+      ],
+      semanticCommitScope: 'packer',
+      commitMessageTopic: 'Packer',
     },
     {
-      // These never ship in the image, so a breaking update to one must not
-      // cut a major release. Their majors still land on major- branches.
-      description: "Tooling outside the image: no breaking ! prefix",
-      matchManagers: ["github-actions", "renovate-config", "mise"],
-      matchDepNames: ["!aqua:hashicorp/packer"],
-      commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}}):",
+      description: 'zer0ver: give 0.x minors the breaking ! prefix',
+      matchUpdateTypes: [
+        'minor',
+      ],
+      matchCurrentVersion: '/^v?0\\./',
+      semanticCommitType: 'feat',
+      commitMessagePrefix: '{{semanticCommitType}}({{semanticCommitScope}})!:',
+      commitMessageExtra: '({{currentVersion}} ➔ {{newVersion}})',
     },
     {
-      // dev dependency group; calendar-versioned, so it majors every year.
-      description: "ansible-lint is CI tooling: no breaking ! prefix",
-      matchManagers: ["pep621"],
-      matchPackageNames: ["ansible-lint"],
-      commitMessagePrefix: "{{semanticCommitType}}({{semanticCommitScope}}):",
+      description: 'zer0ver: route 0.x minors onto major- branches',
+      matchUpdateTypes: [
+        'minor',
+      ],
+      matchCurrentVersion: '/^v?0\\./',
+      additionalBranchPrefix: 'major-',
+    },
+    {
+      description: 'Tooling outside the image: no breaking ! prefix',
+      matchManagers: [
+        'github-actions',
+        'renovate-config',
+        'mise',
+      ],
+      matchDepNames: [
+        '!aqua:hashicorp/packer',
+      ],
+      commitMessagePrefix: '{{semanticCommitType}}({{semanticCommitScope}}):',
+    },
+    {
+      description: 'ansible-lint is CI tooling: no breaking ! prefix',
+      matchManagers: [
+        'pep621',
+      ],
+      matchPackageNames: [
+        'ansible-lint',
+      ],
+      commitMessagePrefix: '{{semanticCommitType}}({{semanticCommitScope}}):',
     },
   ],
 }
