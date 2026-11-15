@@ -11,7 +11,9 @@
     ":semanticCommits",
   ],
   labels: ["renovate"],
-  dependencyDashboardLabels: ["renovate"],
+  dependencyDashboard: {
+    labels: ['renovate'],
+  },
   customManagers: [
     {
       // ansible-builder definitions have no built-in manager. base_image is the
