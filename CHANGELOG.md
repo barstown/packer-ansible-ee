@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.3](https://github.com/barstown/packer-ansible-ee/compare/1.0.2...1.0.3) (2026-11-15)
+
+
+### Bug Fixes
+
+* **renovate:** migrate from dependencyDashboardLabels to dependencyDashboard.labels ([#135](https://github.com/barstown/packer-ansible-ee/issues/135)) ([fbf4e22](https://github.com/barstown/packer-ansible-ee/commit/fbf4e224e9945438647e6fae039b7b3c0d62936e))
+
+
+### Continuous Integration
+
+* **github-action:** Update action jdx/mise-action (v5.2.7 ➔ v5.2.8) ([#134](https://github.com/barstown/packer-ansible-ee/issues/134)) ([02de705](https://github.com/barstown/packer-ansible-ee/commit/02de705eed64e91dff154be900c04a9f79abd35b))
+
+
+### Miscellaneous Chores
+
+* **deps:** lock file maintenance ([#130](https://github.com/barstown/packer-ansible-ee/issues/130)) ([d07d293](https://github.com/barstown/packer-ansible-ee/commit/d07d2931a3b25a3de5066e7c4524bfe905b2fdbd))
+* **mise:** Update tool uv (0.13.7 ➔ 0.13.8) ([#133](https://github.com/barstown/packer-ansible-ee/issues/133)) ([c372820](https://github.com/barstown/packer-ansible-ee/commit/c372820454d39ad544b5cdefd351e0b301ac3726))
+
 ## [1.0.2](https://github.com/barstown/packer-ansible-ee/compare/1.0.1...1.0.2) (2026-11-08)
 
 
