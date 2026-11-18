@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.1.0](https://github.com/barstown/packer-ansible-ee/compare/1.0.3...1.1.0) (2026-11-18)
+
+
+### Features
+
+* **container:** update image quay.io/rockylinux/rockylinux (10.2 ➔ 10.3) ([#139](https://github.com/barstown/packer-ansible-ee/issues/139)) ([464569e](https://github.com/barstown/packer-ansible-ee/commit/464569ea22b8a0ee4e19ee65e90f6ec22a2046e8))
+
+
+### Continuous Integration
+
+* **github-action:** Update action actions/create-github-app-token (v3.3.0 ➔ v3.4.0) ([#141](https://github.com/barstown/packer-ansible-ee/issues/141)) ([9a6edd5](https://github.com/barstown/packer-ansible-ee/commit/9a6edd51daf67aff164ebbc18c3a4391201fb985))
+* **github-action:** Update action jdx/mise-action (v5.2.8 ➔ v5.2.9) ([#136](https://github.com/barstown/packer-ansible-ee/issues/136)) ([abdf49a](https://github.com/barstown/packer-ansible-ee/commit/abdf49a094827e23ba07bdf48e61f49ac6e3a513))
+* **github-action:** Update action jdx/mise-action (v5.2.9 ➔ v5.2.10) ([#142](https://github.com/barstown/packer-ansible-ee/issues/142)) ([3322150](https://github.com/barstown/packer-ansible-ee/commit/332215016e89a5b52a25b6cf9ad54c747a48ca3b))
+
+
+### Miscellaneous Chores
+
+* **deps:** lock file maintenance ([#138](https://github.com/barstown/packer-ansible-ee/issues/138)) ([ea06da3](https://github.com/barstown/packer-ansible-ee/commit/ea06da3860907c8e9055ebc4dd983d87b08473ef))
+* **mise:** Update tool uv (0.13.8 ➔ 0.13.9) ([#140](https://github.com/barstown/packer-ansible-ee/issues/140)) ([2d98966](https://github.com/barstown/packer-ansible-ee/commit/2d98966336d8ab45d7c236a381fea5e8cb4f440d))
+
 ## [1.0.3](https://github.com/barstown/packer-ansible-ee/compare/1.0.2...1.0.3) (2026-11-15)
 
 
