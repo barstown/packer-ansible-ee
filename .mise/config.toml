@@ -7,7 +7,7 @@
 "aqua:rhysd/actionlint" = "1.7.12"
 "aqua:zizmorcore/zizmor" = "1.33.1"
 "python" = "3.12.16"
-"uv" = "0.13.9"
+"uv" = "0.13.10"
 
 [env]
 IMAGE = "ghcr.io/barstown/packer-ansible-ee"
